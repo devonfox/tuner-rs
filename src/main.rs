@@ -5,7 +5,7 @@ fn main() {
 
     let numargs = env::args().count();
     match numargs {
-        1 => (),
+        1 => read_input(),
         2 => {
             let filename = env::args().nth(1).expect("no filename provided");
             read_wav(filename);
@@ -19,10 +19,10 @@ fn main() {
 }
 
 fn read_wav(filename: String) {
-    let reader = hound::WavReader::open(&filename).unwrap();
+    let mut reader = hound::WavReader::open(&filename).unwrap();
 
     // maps samples and collects to a vec, unwrapping result in the process
-    //let samples: Vec<i16> = reader.samples().map(|s| s.unwrap()).collect();
+    let samples: Vec<i16> = reader.samples().map(|s| s.unwrap()).collect();
     let inspec: hound::WavSpec = reader.spec();
     assert_eq!(inspec.channels, 1, "mono input files only.");
 
@@ -31,4 +31,25 @@ fn read_wav(filename: String) {
     println!("\nSource File: '{}'", filename);
     println!("Duration: {} second(s)", duration);
     println!("Wav Sample Rate: {} sps", wav_samprate);
+    let _size = duration * wav_samprate;
+    if 131072 < samples.len() {
+        let trim = trim_wav(&samples);
+        println!("Trim Len: {}", trim.len());
+    }
+
+    println!("Samples Len: {}", samples.len());
+}
+
+fn trim_wav(samples: &[i16]) -> Vec<i16> {
+    let trim_amount: usize = 131072;
+    let mut trimmed: Vec<i16> = Vec::new();
+
+    for sample in samples.iter().take(trim_amount) {
+        trimmed.push(*sample);
+    }
+    trimmed
+}
+
+fn read_input() {
+    println!("Debug: Reading from input...");
 }
