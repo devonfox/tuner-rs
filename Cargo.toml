@@ -3,6 +3,10 @@ name = "hw3-tuner"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "tuner"
+path = "tuner.rs"
+
 [dependencies]
 cpal = "0.13.0"
 hound = "3.4"
