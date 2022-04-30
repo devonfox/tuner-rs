@@ -1,4 +1,7 @@
+use num_complex::Complex64;
+use realfft::RealFftPlanner;
 use std::env;
+use std::f64;
 
 fn main() {
     // Takes first argument as a filename to a wav file to resample to half the rate
@@ -31,20 +34,65 @@ fn read_wav(filename: String) {
     println!("\nSource File: '{}'", filename);
     println!("Duration: {} second(s)", duration);
     println!("Wav Sample Rate: {} sps", wav_samprate);
-    let _size = duration * wav_samprate;
-    if 131072 < samples.len() {
-        let trim = trim_wav(&samples);
-        println!("Trim Len: {}", trim.len());
-    }
+    let samples_size = samples.len();
+    let samples_max: usize = 131072;
+    let trim = match samples_max < samples_size {
+        true => trim_wav(&samples, samples_max),
+        false => trim_wav(&samples, closest_power(samples_size)),
+    };
 
-    println!("Samples Len: {}", samples.len());
+    // println!("Samples Len: {}", samples.len());
+    // println!("Trim Len: {}", trim.len());
+
+    let length = trim.len();
+    // Apply the FFT here
+    // make a planner
+    let mut real_planner = RealFftPlanner::<f64>::new();
+    let mut convertedsamples = vecconvert(trim);
+    // create a FFT
+    let r2c = real_planner.plan_fft_forward(length);
+    // make input and output vectors
+    // let mut indata = r2c.make_input_vec();
+    let mut spectrum = r2c.make_output_vec();
+
+    // Are they the length we expect?
+    assert_eq!(convertedsamples.len(), length);
+    assert_eq!(spectrum.len(), length / 2 + 1);
+
+    // Forward transform the input data
+    r2c.process(&mut convertedsamples, &mut spectrum).unwrap();
+
+    // println!("{:?}", spectrum);
+
+    // Report largest bin/freq
+
+    let freq = highest_freq(spectrum);
+    println!("Freq = {}", freq);
 }
 
-fn trim_wav(samples: &[i16]) -> Vec<i16> {
-    let trim_amount: usize = 131072;
+fn highest_freq(fft_output: Vec<Complex64>) -> usize {
+    let mut max: f64 = 0.0;
+    let mut position = 0;
+    for i in 0..fft_output.len() {
+        let re = fft_output[i].re * (1.0 / f64::sqrt(fft_output.len() as f64));
+        let im = fft_output[i].im * (1.0 / f64::sqrt(fft_output.len() as f64));
+        let mut bin = f64::sqrt(f64::powf(re, 2.0) + f64::powf(im, 2.0));
+        //bin = bin.abs();
+        match bin > max {
+            true => {
+                max = bin;
+                position = i;
+            }
+            false => (),
+        }
+    }
+    position
+}
+
+fn trim_wav(samples: &[i16], length: usize) -> Vec<i16> {
     let mut trimmed: Vec<i16> = Vec::new();
 
-    for sample in samples.iter().take(trim_amount) {
+    for sample in samples.iter().take(length) {
         trimmed.push(*sample);
     }
     trimmed
@@ -53,3 +101,46 @@ fn trim_wav(samples: &[i16]) -> Vec<i16> {
 fn read_input() {
     println!("Debug: Reading from input...");
 }
+
+fn closest_power(samples: usize) -> usize {
+    let mut trimmed = 0;
+    for i in (0..samples).rev() {
+        if i & (i - 1) == 0 {
+            trimmed = i;
+            break;
+        }
+    }
+    if (trimmed * 2) == samples {
+        return samples;
+    }
+    trimmed
+}
+
+fn vecconvert(samples: Vec<i16>) -> Vec<f64> {
+    let mut output: Vec<f64> = Vec::new();
+    for sample in samples {
+        output.push(sample as f64);
+    }
+    let window = apodize::hanning_iter(output.len()).collect::<Vec<f64>>();
+
+    // buffer that will hold data * window
+    let mut windowed_data = vec![0.; output.len()];
+
+    for (windowed, (window, data)) in windowed_data
+        .iter_mut()
+        .zip(window.iter().zip(output.iter()))
+    {
+        *windowed = *window * *data;
+    }
+
+    windowed_data
+}
+
+// fn normalize(samples: Vec<f64>) -> Vec<f64> {
+//     let mut normalized = Vec::new();
+//     let length = samples.len();
+//     for sample in samples {
+//         normalized.push(sample * (1.0 / length as f64));
+//     }
+//     normalized
+// }
