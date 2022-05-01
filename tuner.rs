@@ -17,8 +17,6 @@ fn main() {
             println!("Too many arguments!");
         }
     }
-
-    // creates a wav reader from 'hound' crate
 }
 
 fn read_wav(filename: String) {
@@ -48,6 +46,8 @@ fn read_wav(filename: String) {
     // Apply the FFT here
     // make a planner
     let mut real_planner = RealFftPlanner::<f64>::new();
+
+    // Windowing in the conversion function
     let mut convertedsamples = vecconvert(trim);
     // create a FFT
     let r2c = real_planner.plan_fft_forward(length);
@@ -67,7 +67,7 @@ fn read_wav(filename: String) {
     // Report largest bin/freq
 
     let freq = highest_freq(spectrum);
-    println!("Freq = {}", freq);
+    println!("Freq = {} Hz", freq);
 }
 
 fn highest_freq(fft_output: Vec<Complex64>) -> usize {
@@ -77,13 +77,10 @@ fn highest_freq(fft_output: Vec<Complex64>) -> usize {
         let re = fft_output[i].re * (1.0 / f64::sqrt(fft_output.len() as f64));
         let im = fft_output[i].im * (1.0 / f64::sqrt(fft_output.len() as f64));
         let mut bin = f64::sqrt(f64::powf(re, 2.0) + f64::powf(im, 2.0));
-        //bin = bin.abs();
-        match bin > max {
-            true => {
-                max = bin;
-                position = i;
-            }
-            false => (),
+        bin = bin.abs();
+        if bin > max {
+            max = bin;
+            position = i;
         }
     }
     position
@@ -121,7 +118,7 @@ fn vecconvert(samples: Vec<i16>) -> Vec<f64> {
     for sample in samples {
         output.push(sample as f64);
     }
-    let window = apodize::hanning_iter(output.len()).collect::<Vec<f64>>();
+    let window = apodize::triangular_iter(output.len()).collect::<Vec<f64>>();
 
     // buffer that will hold data * window
     let mut windowed_data = vec![0.; output.len()];
