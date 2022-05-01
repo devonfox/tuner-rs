@@ -2,6 +2,7 @@ use num_complex::Complex64;
 use realfft::RealFftPlanner;
 use std::env;
 use std::f64;
+extern crate apodize;
 
 fn main() {
     // Takes first argument as a filename to a wav file to resample to half the rate
@@ -66,11 +67,11 @@ fn read_wav(filename: String) {
 
     // Report largest bin/freq
 
-    let freq = highest_freq(spectrum);
+    let freq = highest_freq(spectrum, wav_samprate);
     println!("Freq = {} Hz", freq);
 }
 
-fn highest_freq(fft_output: Vec<Complex64>) -> usize {
+fn highest_freq(fft_output: Vec<Complex64>, samplerate: u32) -> f64 {
     let mut max: f64 = 0.0;
     let mut position = 0;
     for i in 0..fft_output.len() {
@@ -83,7 +84,8 @@ fn highest_freq(fft_output: Vec<Complex64>) -> usize {
             position = i;
         }
     }
-    position
+
+    position as f64 * samplerate as f64 * 0.5 / fft_output.len() as f64
 }
 
 fn trim_wav(samples: &[i16], length: usize) -> Vec<i16> {
