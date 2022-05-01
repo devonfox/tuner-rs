@@ -40,12 +40,8 @@ fn read_wav(filename: String) {
         false => trim_wav(&samples, closest_power(samples_size)),
     };
 
-    // println!("Samples Len: {}", samples.len());
-    // println!("Trim Len: {}", trim.len());
-
     let length = trim.len();
     // Apply the FFT here
-    // make a planner
     let mut real_planner = RealFftPlanner::<f64>::new();
 
     // Windowing in the conversion function
@@ -53,7 +49,7 @@ fn read_wav(filename: String) {
     // create a FFT
     let r2c = real_planner.plan_fft_forward(length);
     // make input and output vectors
-    // let mut indata = r2c.make_input_vec();
+
     let mut spectrum = r2c.make_output_vec();
 
     // Are they the length we expect?
@@ -63,12 +59,10 @@ fn read_wav(filename: String) {
     // Forward transform the input data
     r2c.process(&mut convertedsamples, &mut spectrum).unwrap();
 
-    // println!("{:?}", spectrum);
-
     // Report largest bin/freq
 
     let freq = highest_freq(spectrum, wav_samprate);
-    println!("Freq = {} Hz", freq);
+    println!("\nFrequency of '{}': {:.3} Hz", filename, freq);
 }
 
 fn highest_freq(fft_output: Vec<Complex64>, samplerate: u32) -> f64 {
@@ -99,6 +93,7 @@ fn trim_wav(samples: &[i16], length: usize) -> Vec<i16> {
 
 fn read_input() {
     println!("Debug: Reading from input...");
+    //
 }
 
 fn closest_power(samples: usize) -> usize {
@@ -134,12 +129,3 @@ fn vecconvert(samples: Vec<i16>) -> Vec<f64> {
 
     windowed_data
 }
-
-// fn normalize(samples: Vec<f64>) -> Vec<f64> {
-//     let mut normalized = Vec::new();
-//     let length = samples.len();
-//     for sample in samples {
-//         normalized.push(sample * (1.0 / length as f64));
-//     }
-//     normalized
-// }
