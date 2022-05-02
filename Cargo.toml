@@ -9,6 +9,7 @@ path = "tuner.rs"
 
 [dependencies]
 cpal = "0.13.0"
+portaudio = "0.7.0"
 hound = "3.4"
 realfft = "3.0.0"
 apodize = "1.0.0"
