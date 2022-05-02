@@ -30,7 +30,7 @@ fn read_wav(filename: String) {
     assert_eq!(inspec.channels, 1, "mono input files only.");
 
     let wav_samprate = inspec.sample_rate;
-    let duration = reader.duration() / inspec.sample_rate;
+    let _duration = reader.duration() / inspec.sample_rate;
     // println!("\nSource File: '{}'", filename);
     // println!("Duration: {} second(s)", duration);
     // println!("Wav Sample Rate: {} sps", wav_samprate);
@@ -95,9 +95,7 @@ fn trim_wav(samples: &[i16], length: usize) -> Vec<i16> {
 fn read_input() {
     println!("Debug: Reading from input...");
 
-    let pa = pa::PortAudio::new().unwrap();
-
-    
+    let _pa = pa::PortAudio::new().unwrap();
 }
 
 fn closest_power(samples: usize) -> usize {
