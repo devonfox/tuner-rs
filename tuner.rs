@@ -1,8 +1,9 @@
+extern crate portaudio;
 use num_complex::Complex64;
+use portaudio as pa;
 use realfft::RealFftPlanner;
 use std::env;
 use std::f64;
-extern crate apodize;
 
 fn main() {
     // Takes first argument as a filename to a wav file to resample to half the rate
@@ -30,9 +31,9 @@ fn read_wav(filename: String) {
 
     let wav_samprate = inspec.sample_rate;
     let duration = reader.duration() / inspec.sample_rate;
-    println!("\nSource File: '{}'", filename);
-    println!("Duration: {} second(s)", duration);
-    println!("Wav Sample Rate: {} sps", wav_samprate);
+    // println!("\nSource File: '{}'", filename);
+    // println!("Duration: {} second(s)", duration);
+    // println!("Wav Sample Rate: {} sps", wav_samprate);
     let samples_size = samples.len();
     let samples_max: usize = 131072;
     let trim = match samples_max < samples_size {
@@ -62,7 +63,7 @@ fn read_wav(filename: String) {
     // Report largest bin/freq
 
     let freq = highest_freq(spectrum, wav_samprate);
-    println!("\nFrequency of '{}': {:.3} Hz", filename, freq);
+    println!("\nFrequency of '{}': {:.1} Hz\n", filename, freq);
 }
 
 fn highest_freq(fft_output: Vec<Complex64>, samplerate: u32) -> f64 {
@@ -93,7 +94,10 @@ fn trim_wav(samples: &[i16], length: usize) -> Vec<i16> {
 
 fn read_input() {
     println!("Debug: Reading from input...");
-    //
+
+    let pa = pa::PortAudio::new().unwrap();
+
+    
 }
 
 fn closest_power(samples: usize) -> usize {
