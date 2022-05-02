@@ -1,6 +1,7 @@
-extern crate portaudio;
+// extern crate portaudio;
 use num_complex::Complex64;
-use portaudio as pa;
+use cpal::traits::{HostTrait, DeviceTrait};
+// use portaudio as pa;
 use realfft::RealFftPlanner;
 use std::env;
 use std::f64;
@@ -95,7 +96,24 @@ fn trim_wav(samples: &[i16], length: usize) -> Vec<i16> {
 fn read_input() {
     println!("Debug: Reading fronm a live input is still broken...");
 
-    let _pa = pa::PortAudio::new().unwrap();
+    // let _pa = pa::PortAudio::new().unwrap();
+
+    let host = cpal::default_host();
+    let device = host
+        .default_input_device()
+        .expect("No default input device");
+
+    println!("Device: {:?}", device.name());
+
+    let config = device
+        .default_input_config()
+        .expect("No default input config");
+
+    println!("Config: {:?}", config);
+
+    let stream = device
+        .build_input_stream(&config.into(), |data: &[i16], callback_info| {}, |error| {})
+        .expect("Invalid stream");
 }
 
 fn closest_power(samples: usize) -> usize {
