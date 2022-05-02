@@ -93,7 +93,7 @@ fn trim_wav(samples: &[i16], length: usize) -> Vec<i16> {
 }
 
 fn read_input() {
-    println!("Debug: Reading from input...");
+    println!("Debug: Reading fronm a live input is still broken...");
 
     let _pa = pa::PortAudio::new().unwrap();
 }
