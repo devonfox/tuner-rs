@@ -1,3 +1,4 @@
+use cpal::traits::StreamTrait;
 // extern crate portaudio;
 use num_complex::Complex64;
 use cpal::traits::{HostTrait, DeviceTrait};
@@ -112,8 +113,16 @@ fn read_input() {
     println!("Config: {:?}", config);
 
     let stream = device
-        .build_input_stream(&config.into(), |data: &[i16], callback_info| {}, |error| {})
+        .build_input_stream(&config.into(), move |data: &[f32], _callback_info| {
+            std::thread::sleep(std::time::Duration::from_secs(2));
+            println!("{:?}", data.len());
+        }, |_error| {})
         .expect("Invalid stream");
+    stream.play().unwrap();
+    loop {
+        std::thread::sleep(std::time::Duration::from_secs(1)) 
+    }
+    drop(stream);
 }
 
 fn closest_power(samples: usize) -> usize {
