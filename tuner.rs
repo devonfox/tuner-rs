@@ -14,7 +14,7 @@ use std::f64;
 use std::io::stdin;
 
 fn main() {
-    // Takes first argument as a filename to a wav file to resample to half the rate
+    // Takes first argument as a filename to a wav file to find dominant frequency
 
     let numargs = env::args().count();
     match numargs {
@@ -29,6 +29,7 @@ fn main() {
     }
 }
 
+/// Reads a wav file and reports frequency from wav file entered at command line
 fn read_wav(filename: String) {
     let mut reader = hound::WavReader::open(&filename).unwrap();
 
@@ -38,27 +39,22 @@ fn read_wav(filename: String) {
     assert_eq!(inspec.channels, 1, "mono input files only.");
 
     let wav_samprate = inspec.sample_rate;
-    let _duration = reader.duration() / inspec.sample_rate;
-    // println!("\nSource File: '{}'", filename);
-    // println!("Duration: {} second(s)", duration);
-    // println!("Wav Sample Rate: {} sps", wav_samprate);
+    assert_eq!(wav_samprate, 48000, "wav is not 48000 sps");
+
     let samples_size = samples.len();
     let samples_max: usize = 131072;
     let trim = match samples_max < samples_size {
         true => trim_wav(&samples, samples_max),
         false => trim_wav(&samples, closest_power(samples_size)),
     };
-
     let length = trim.len();
+
     // Apply the FFT here
     let mut real_planner = RealFftPlanner::<f64>::new();
-
     // Windowing in the conversion function
     let mut convertedsamples = vecconvert(trim);
     // create a FFT
     let r2c = real_planner.plan_fft_forward(length);
-    // make input and output vectors
-
     let mut spectrum = r2c.make_output_vec();
 
     // Are they the length we expect?
@@ -68,12 +64,12 @@ fn read_wav(filename: String) {
     // Forward transform the input data
     r2c.process(&mut convertedsamples, &mut spectrum).unwrap();
 
-    // Report largest bin/freq
-
+    // Report dominant freq
     let freq = highest_freq(spectrum, wav_samprate);
     println!("\nFrequency of '{}': {:.1} Hz\n", filename, freq);
 }
 
+/// Take complex vector from FFT output and reports highest frequency
 fn highest_freq(fft_output: Vec<Complex64>, samplerate: u32) -> f64 {
     let mut max: f64 = 0.0;
     let mut position = 0;
@@ -91,15 +87,14 @@ fn highest_freq(fft_output: Vec<Complex64>, samplerate: u32) -> f64 {
     position as f64 * samplerate as f64 * 0.5 / fft_output.len() as f64
 }
 
+/// Trims samples from wav file to power of 2
 fn trim_wav(samples: &[i16], length: usize) -> Vec<i16> {
-    let mut trimmed: Vec<i16> = Vec::new();
-
-    for sample in samples.iter().take(length) {
-        trimmed.push(*sample);
-    }
+    let trimmed = samples.iter().take(length).map(|sample| *sample).collect();
     trimmed
 }
 
+/// Reads from a default input device at 48000 sps and a buffer of 8192 samples, if supported
+/// then applies tri window and FFT finding the highest frequency every 8192 samples
 fn read_input() {
     let host = cpal::default_host();
     let device = host
@@ -125,7 +120,6 @@ fn read_input() {
             &config2,
             move |data: &[f32], _| {
                 std::thread::sleep(std::time::Duration::from_millis(100));
-                // let mut buffer: Vec<f64> = Vec::new();
                 let mut buffer: Vec<f64> = data.iter().map(|x| x.to_i16() as f64).collect();
                 buffer.push(0.0);
                 // println!("{}", buffer.len());
@@ -166,10 +160,12 @@ fn read_input() {
     drop(stream);
 }
 
+/// Cpal Input Stream Callback Error Handler
 fn err_fn(err: cpal::StreamError) {
     eprintln!("an error occurred on stream: {}", err);
 }
 
+/// Finds the closest power just under or equal to the number of samples
 fn closest_power(samples: usize) -> usize {
     let mut trimmed = 0;
     for i in (0..samples).rev() {
@@ -184,6 +180,7 @@ fn closest_power(samples: usize) -> usize {
     trimmed
 }
 
+/// Converts a vector of i16 samples to f64 samples and applying a tri window
 fn vecconvert(samples: Vec<i16>) -> Vec<f64> {
     let mut output: Vec<f64> = Vec::new();
     for sample in samples {
