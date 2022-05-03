@@ -1,8 +1,10 @@
 use cpal::traits::StreamTrait;
-// extern crate portaudio;
+use cpal::traits::{DeviceTrait, HostTrait};
+use cpal::BufferSize;
+use cpal::Sample;
+use cpal::SampleRate;
+use cpal::StreamConfig;
 use num_complex::Complex64;
-use cpal::traits::{HostTrait, DeviceTrait};
-// use portaudio as pa;
 use realfft::RealFftPlanner;
 use std::env;
 use std::f64;
@@ -105,7 +107,13 @@ fn read_input() {
         .expect("No default input device");
 
     println!("Device: {:?}", device.name());
-
+    let samplerate: SampleRate = SampleRate(48000);
+    let buffersize: BufferSize = BufferSize::Fixed(4096);
+    let config2: StreamConfig = StreamConfig {
+        channels: 1,
+        sample_rate: samplerate,
+        buffer_size: buffersize,
+    };
     let config = device
         .default_input_config()
         .expect("No default input config");
@@ -113,16 +121,24 @@ fn read_input() {
     println!("Config: {:?}", config);
 
     let stream = device
-        .build_input_stream(&config.into(), move |data: &[f32], _callback_info| {
-            std::thread::sleep(std::time::Duration::from_secs(2));
-            println!("{:?}", data.len());
-        }, |_error| {})
+        .build_input_stream(
+            &config2,
+            move |data: &[f32], _| {
+                std::thread::sleep(std::time::Duration::from_millis(100));
+                println!("{:?}", data[0].to_i16() as f64);
+            },
+            err_fn,
+        )
         .expect("Invalid stream");
     stream.play().unwrap();
     loop {
-        std::thread::sleep(std::time::Duration::from_secs(1)) 
+        std::thread::sleep(std::time::Duration::from_secs(1))
     }
-    drop(stream);
+    // drop(stream);
+}
+
+fn err_fn(err: cpal::StreamError) {
+    eprintln!("an error occurred on stream: {}", err);
 }
 
 fn closest_power(samples: usize) -> usize {
