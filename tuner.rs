@@ -101,10 +101,6 @@ fn trim_wav(samples: &[i16], length: usize) -> Vec<i16> {
 }
 
 fn read_input() {
-    println!("Debug: Reading fronm a live input is still broken...");
-
-    // let _pa = pa::PortAudio::new().unwrap();
-
     let host = cpal::default_host();
     let device = host
         .default_input_device()
@@ -169,7 +165,6 @@ fn read_input() {
     }
     drop(stream);
 }
-
 
 fn err_fn(err: cpal::StreamError) {
     eprintln!("an error occurred on stream: {}", err);
