@@ -8,6 +8,7 @@ use num_complex::Complex64;
 use realfft::RealFftPlanner;
 use std::env;
 use std::f64;
+use std::io::stdin;
 
 fn main() {
     // Takes first argument as a filename to a wav file to resample to half the rate
@@ -108,33 +109,61 @@ fn read_input() {
 
     println!("Device: {:?}", device.name());
     let samplerate: SampleRate = SampleRate(48000);
-    let buffersize: BufferSize = BufferSize::Fixed(4096);
+    let buffersize: BufferSize = BufferSize::Fixed(8192);
     let config2: StreamConfig = StreamConfig {
         channels: 1,
         sample_rate: samplerate,
         buffer_size: buffersize,
     };
-    let config = device
+    let _config = device
         .default_input_config()
         .expect("No default input config");
 
-    println!("Config: {:?}", config);
+    println!("Config: {:?}", config2);
 
     let stream = device
         .build_input_stream(
             &config2,
             move |data: &[f32], _| {
                 std::thread::sleep(std::time::Duration::from_millis(100));
-                println!("{:?}", data[0].to_i16() as f64);
+                // let mut buffer: Vec<f64> = Vec::new();
+                let mut buffer: Vec<f64> = data.iter().map(|x| x.to_i16() as f64).collect();
+                buffer.push(0.0);
+                // println!("{}", buffer.len());
+                let window = apodize::triangular_iter(buffer.len()).collect::<Vec<f64>>();
+
+                // buffer that will hold data * window
+                let mut windowed_buffer = vec![0.; buffer.len()];
+
+                for (windowed, (window, data)) in windowed_buffer
+                    .iter_mut()
+                    .zip(window.iter().zip(buffer.iter()))
+                {
+                    *windowed = *window * *data;
+                }
+                let length = windowed_buffer.len();
+                let mut real_planner = RealFftPlanner::<f64>::new();
+                let r2c = real_planner.plan_fft_forward(length);
+                let mut spectrum = r2c.make_output_vec();
+                assert_eq!(windowed_buffer.len(), length);
+                assert_eq!(spectrum.len(), length / 2 + 1);
+                r2c.process(&mut windowed_buffer, &mut spectrum).unwrap();
+
+                let freq = highest_freq(spectrum, 48000);
+                println!("\n{:.1} Hz", freq);
             },
             err_fn,
         )
         .expect("Invalid stream");
     stream.play().unwrap();
-    loop {
-        std::thread::sleep(std::time::Duration::from_secs(1))
+    let mut input = String::new();
+    let stdin = stdin();
+    input.clear();
+    match stdin.read_line(&mut input) {
+        Ok(_) => println!("Ending program..."),
+        Err(err) => println!("Error: {}", err),
     }
-    // drop(stream);
+    drop(stream);
 }
 
 fn err_fn(err: cpal::StreamError) {
