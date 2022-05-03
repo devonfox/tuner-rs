@@ -9,7 +9,9 @@ This program uses the latest version of Rust (1.59.0).  Make sure this is instal
 
 To run and analyze a .wav file, simply write `cargo run 'filename.wav`
 
-To run and analyze live input, simply enter `cargo run` in the project folder and it will open a connection to the default input device.  Currently this is setup with a fixed sample buffer of `8192` samples.  It works with my Blue Yeti USB microphone, however, when using on Mac or laptop microphone the buffer size is too high. 
+To run and analyze live input, simply enter `cargo run` in the project folder and it will open a connection to the default input device.  Currently this is setup with a fixed sample buffer of `8192` samples.  It works with my Blue Yeti USB microphone, however, when using on Mac or laptop microphone the buffer size is too high.
+
+To stop, just hit 'enter' on the keyboard, and it will stop the live input thread and stop the program.
 
 Leaving that as a *todo!* option.
 
