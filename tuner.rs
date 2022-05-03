@@ -1,3 +1,6 @@
+//! CS410P - HW3: Tuner
+//! Devon Fox 2022
+
 use cpal::traits::StreamTrait;
 use cpal::traits::{DeviceTrait, HostTrait};
 use cpal::BufferSize;
@@ -151,6 +154,7 @@ fn read_input() {
 
                 let freq = highest_freq(spectrum, 48000);
                 println!("\n{:.1} Hz", freq);
+                print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
             },
             err_fn,
         )
