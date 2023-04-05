@@ -1,4 +1,3 @@
-//! CS410P - HW3: Tuner
 //! Devon Fox 2022
 
 use cpal::traits::StreamTrait;
