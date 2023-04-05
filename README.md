@@ -1,6 +1,4 @@
-## HW3: Tuner
-
-CS410P - Music, Sound, and Computers
+## Tuner.rs
 
 *Devon Fox 2022*
 ### Linux/Mac Build/Run Instructions
@@ -17,13 +15,11 @@ Leaving that as a *todo!* option.
 
 *This program will only accept mono (single channel) wav files.*
 
-### What Went Down
+### Notes
 
 This was quite challenging, and in the end I learned a lot about applying an FFT, and how to find the approximate frequency.  I read many different wave files to test, and applied the FFT from the `realfft` crate, which accepts real number inputs and outputs to a complex array.  I then found the most prominent frequency in my own handwritten function and displayed this frequency. 
 
 Getting live input to register correctly was also a challenge using `cpal`.  I attempted to use `portaudio` but had more issues with cross-platform use, so opted for `cpal`.  
-
-###  How It Went
 
 Reading the frequency was challenging but overall, Bart helped me fill a few gaps in my understanding and I was able to get this functionality working.  The function displays an accuracy within 0.5Hz for the most part, except in the cases that we read a higher harmonic, in which case it displays a multiple, for instance in the example file `guitar-a4.wav`, it read 880Hz instead of 440Hz.  The sine waves I tested were all super accurate, as there are no harmonics present.
 
